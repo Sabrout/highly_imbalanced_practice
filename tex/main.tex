@@ -1,0 +1,151 @@
+\documentclass{article}
+
+% ----------------------------------- %
+%               Packages              %
+% ----------------------------------- %
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage[square,numbers]{natbib}
+\usepackage[]{algorithm2e}
+\bibliographystyle{abbrvnat}
+
+% ----------------------------------- %
+%               Commands              %
+% ----------------------------------- %
+
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+
+% Bandit Algorithm
+
+% Reinforcement Learning
+
+\def\numberArm{k}
+\def\numberStep{T}
+\def\step{t}
+
+\def\reward{r}
+\def\rewardNumber{N}
+\def\rewardRandom{R}
+\def\rewardMean{\mu}
+\def\rewardPredMean{\hat{\rewardMean}}
+\def\rewardStd{\sigma}
+
+\def\regret{\textbf{r}}
+
+\def\UCB{\text{UCB}}
+\def\C{\text{UCB}}
+\def\confidenceUCB#1#2{\sqrt{\frac{2\log(#1)}{\rewardNumber_{#2}}}}
+
+% ----------------------------------- %
+%                 Title               %
+% ----------------------------------- %
+
+\title{Highly Imbalanced Learning}
+\author{Paul Viallard\\
+  \texttt{\href{mailto:paul.viallard@etu.univ-st-etienne.fr}{paul.viallard@etu.univ-st-etienne.fr}} 
+\\\\ Omar Elsabrout\\
+\texttt{\href{mailto:omar.elsabrout@etu.univ-st-etienne.fr}{omar.elsabrout@etu.univ-st-etienne.fr}}}
+\date{30 November 2018}
+
+% ----------------------------------- %
+%               Document              %
+% ----------------------------------- %
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+	Binary classification with strong class imbalance can be found in many real-world classification problems. From trying to predict events such as network intrusion and bank fraud to a patient's medical diagnosis, the goal in these cases is to be able to identify instances of the minority class that is underrepresented in the dataset. This, of course, presents a big challenge as most predictive models tend to ignore the more critical minority class while deceptively giving high accuracy results by favoring the majority class.
+\end{abstract}
+
+\section{Introduction}
+	In this lab session we explore the problem of having a severe imbalance in our provided datasets. Such imbalance makes it hard to converge into a model that has strict decision boundaries with wide margins to successfully classify new data points at test time by conventional techniques.
+	
+	Hence, we decided to follow three algorithms and their combinations to tackle this problem of imbalance in the given dataset. Those algorithms are Gradient Boosting, SMOTE and Tomek Links. Each one is discussed in its own section.
+	
+\section{Dataset}
+	In order to understand and experience handling such problem, we observe a fraud detection dataset with 10,000 data examples. The imbalance in such dataset is having almost all of 9,787 labels being negative and only 213 being positive. We receive the dataset in form of two CSV files. Thus, we process those two files, \texttt{train.csv} and \texttt{train\_labels.csv}, using Pandas\cite{pandas} package in Python. The dataset has 53 features of numerical integers and floats that contribute into a binary classification model. In the \texttt{train\_labels.csv} file we have either 0 for negative labels or 1 for positive ones.
+
+\section{Gradient Boosting}
+	Boosting algorithms play a crucial role in dealing with bias variance trade-off. Unlike bagging algorithms, which only controls for high variance in a model, boosting controls both the aspects (bias and variance), and is considered to be more effective. A sincere understanding of Gradient Boosting is our main target out of applying it on our dataset. We use the algorithm provided by Scikit-learn\cite{scikit-learn} package in Python.
+	
+	Explaining how Gradient Boosting works is not our main issue in this document. On the other hand, we seek to understand the parameters of Gradient Boosting while doing the exercise and we can safely dictate that the overall parameters can be divided into three categories:
+	\begin{itemize}
+		\item Tree-specific parameters.
+		\item Boosting parameters.
+		\item Miscellaneous parameters.
+	\end{itemize}
+	We experimented with all types of parameters in order to optimize our model and adapt it to the dataset. However, we reached our maximum F1 score while tuning these parameters:
+	\begin{itemize}
+		\item \texttt{min\_samples\_split}: It defines the minimum number of samples (or observations) which are required in a node to be considered for splitting. It is also used to control over-fitting. Higher values prevent a model from learning relations which might be highly specific to the particular sample selected for a tree.
+		\item \texttt{min\_samples\_leaf}: Generally, lower values should be chosen for imbalanced class problems because the regions in which the minority class will be in majority will be very small.
+		\item \texttt{max\_depth}: It is used to control over-fitting as higher depth will allow model to learn relations very specific to a particular sample.
+		\item \texttt{max\_features}: It is the number of features to consider while searching for a best split. As a thumb-rule, square root of the total number of features works great but we checked up to 30\% of the total number of features.
+		\item \texttt{learning\_rate}: Lower values are generally preferred as they make the model robust to the specific characteristics of tree and thus allowing it to generalize well.
+	\end{itemize}
+	We finally executed this model to train on the provided training dataset with K-fold cross validation to obtain an F1 score, a recall and a precision. Results are discussed in section \ref{results}.
+
+\section{SMOTE and Tomek Links}
+	As the exercise requires, we choose two strategies to improve the Gradient Boosting classifier we implemented and then compare their effects. We choose SMOTE as a method of oversampling positive examples before training our classifier. In addition, we also choose Tomek Links as our second methods to do undersampling on the negative data points. We decided not to modify parameters of both as their auto mode is optimized for our data. On the other hand, we decided to fix the random seed for both to have consistent results.
+
+\section{Results}\label{results}
+	In this section, we present our findings of applying the previously discussed strategies on the input dataset.
+	\\
+	\\
+	Gradient Boosting:
+	\begin{center}
+		\begin{tabular}{ |c|c|c|c| } 
+			\hline
+			& \texttt{precision} & \texttt{recall} & \texttt{f1-score} \\ 
+			\hline
+			\texttt{non-default} & \texttt{0.27 (+/- 0.78)} & \texttt{0.17 (+/- 0.09)} & \texttt{0.84 (+/- 0.11)}\\
+			\texttt{default} & \texttt{0.21 (+/- 0.78)} & \texttt{0.09 (+/- 0.09)} & \texttt{0.32 (+/- 0.11)}\\ 
+			\hline
+			\texttt{average} & \texttt{0.24 (+/- 0.78)} & \texttt{0.13 (+/- 0.09)} & \texttt{0.57 (+/- 0.11)}\\
+			\hline
+		\end{tabular}
+	\end{center}
+	Gradient Boosting with SMOTE:
+	\begin{center}
+		\begin{tabular}{ |c|c|c|c| } 
+			\hline
+			& \texttt{precision} & \texttt{recall} & \texttt{f1-score} \\ 
+			\hline
+			\texttt{non-default} & \texttt{0.29 (+/- 0.2)} & \texttt{0.23 (+/- 0.11)} & \texttt{0.89 (+/- 0.09)}\\
+			\texttt{default} & \texttt{0.23 (+/- 0.2)} & \texttt{0.12 (+/- 0.11)} & \texttt{0.33 (+/- 0.09)}\\ 
+			\hline
+			\texttt{average} & \texttt{0.26 (+/- 0.2)} & \texttt{0.18 (+/- 0.11)} & \texttt{0.61 (+/- 0.09)}\\
+			\hline
+		\end{tabular}
+	\end{center}
+	Gradient Boosting With Tomek Links:
+	\begin{center}
+		\begin{tabular}{ |c|c|c|c| } 
+			\hline
+			& \texttt{precision} & \texttt{recall} & \texttt{f1-score} \\ 
+			\hline
+			\texttt{non-default} & \texttt{0.25 (+/- 0.19)} & \texttt{0.28 (+/- 0.11)} & \texttt{0.85 (+/- 0.08)}\\
+			\texttt{default} & \texttt{0.22 (+/- 0.19)} & \texttt{0.09 (+/- 0.11)} & \texttt{0.31 (+/- 0.08)}\\ 
+			\hline
+			\texttt{average} & \texttt{0.23 (+/- 0.19)} & \texttt{0.19 (+/- 0.11)} & \texttt{0.6 (+/- 0.08)}\\
+			\hline
+		\end{tabular}
+	\end{center}
+
+\section{Conclusion and Perspectives}
+	At the end of the exercise, we learn the benefits of applying undersampling and oversampling using SMOTE and Tomek Links. The increase in the f1-score is due to increasing the diversity in the positive data points or removing negative data points that overlap with the positive ones. We also attach a CSV file that contains our label predictions of the \texttt{test.csv} file using our best classifier which is Gradient Boosting with SMOTE. We understand that there is a space for improvements in tuning the parameters and we will update them once we reach a new result.
+
+\newpage
+\bibliography{bib.bib}
+
+\end{document} 
